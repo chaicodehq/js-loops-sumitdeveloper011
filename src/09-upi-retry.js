@@ -38,25 +38,30 @@ export function upiRetry(outcomes) {
   if (!Array.isArray(outcomes) || outcomes.length === 0) {
     return { attempts: 0, success: false, totalWaitTime: 0 };
   }
-  
+
+  const maxAttempts = 5;
   let attempts = 0;
   let success = false;
   let totalWaitTime = 0;
-  let waitTime = 0;
-  
+  let nextWaitTime = 1; // 1s after first fail, then 2, 4, 8
+
   do {
-    if (attempts >= 5) {
+    attempts++;
+    if (attempts > maxAttempts) {
+      attempts = maxAttempts;
       break;
     }
-    const outcome = outcomes[attempts] || "fail";
+    const outcome = outcomes[attempts - 1] ?? "fail";
     if (outcome === "success") {
       success = true;
       break;
     }
-    totalWaitTime += waitTime;
-    waitTime = waitTime === 0 ? 1 : waitTime * 2;
-    attempts++;
-  } while (true);
-  
+    // After this fail, we wait before next attempt (no wait after 5th fail)
+    if (attempts < maxAttempts) {
+      totalWaitTime += nextWaitTime;
+      nextWaitTime *= 2;
+    }
+  } while (!success);
+
   return { attempts, success, totalWaitTime };
 }

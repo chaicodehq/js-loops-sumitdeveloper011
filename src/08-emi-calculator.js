@@ -41,29 +41,38 @@
  *   // First month interest = 500, EMI = 400 < 500, INFINITE LOOP!
  *   // => { months: -1, totalPaid: -1, totalInterest: -1 }
  */
+const ERROR_RESULT = { months: -1, totalPaid: -1, totalInterest: -1 };
+
 export function calculateEMI(principal, monthlyRate, emi) {
-  if (typeof principal !== 'number' || principal <= 0 ||
-      typeof monthlyRate !== 'number' || monthlyRate <= 0 ||
-      typeof emi !== 'number' || emi <= 0) {
-    return { months: -1, totalPaid: -1, totalInterest: -1 };
+  if (typeof principal !== 'number' || Number.isNaN(principal) || principal <= 0 ||
+      typeof monthlyRate !== 'number' || Number.isNaN(monthlyRate) || monthlyRate <= 0 ||
+      typeof emi !== 'number' || Number.isNaN(emi) || emi <= 0) {
+    return ERROR_RESULT;
   }
-  
+
+  // Infinite loop protection: if EMI <= first month's interest, loan never clears
+  if (emi <= principal * monthlyRate) {
+    return ERROR_RESULT;
+  }
+
   let months = 0;
   let totalPaid = 0;
   let totalInterest = 0;
   let remaining = principal;
-  
+
   while (remaining > 0) {
     const interest = remaining * monthlyRate;
     remaining += interest;
-    remaining -= emi;
-    totalPaid += Math.min(emi, remaining + emi - interest); // Pay full EMI or just what's left
     totalInterest += interest;
+    const payThisMonth = Math.min(emi, remaining);
+    remaining -= payThisMonth;
+    totalPaid += payThisMonth;
     months++;
-    if (remaining <= 0) {
-      break;
-    }
   }
-  
+
+  // Round to 2 decimal places to avoid floating-point noise in assertions
+  totalPaid = Math.round(totalPaid * 100) / 100;
+  totalInterest = Math.round(totalInterest * 100) / 100;
+
   return { months, totalPaid, totalInterest };
 }

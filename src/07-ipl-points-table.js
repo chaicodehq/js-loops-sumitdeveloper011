@@ -53,11 +53,14 @@ export function iplPointsTable(matches) {
     pointsTable[team1].played++;
     pointsTable[team2].played++;
     switch (result) {
-      case 'win':
-        pointsTable[team1].won++;
-        pointsTable[team1].points += 2;
-        pointsTable[team2].lost++;
+      case 'win': {
+        const winnerTeam = winner === team1 ? team1 : team2;
+        const loserTeam = winner === team1 ? team2 : team1;
+        pointsTable[winnerTeam].won++;
+        pointsTable[winnerTeam].points += 2;
+        pointsTable[loserTeam].lost++;
         break;
+      }
       case 'tie':
         pointsTable[team1].tied++;
         pointsTable[team1].points += 1;
